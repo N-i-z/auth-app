@@ -4,14 +4,12 @@ import {
   Post,
   HttpCode,
   HttpStatus,
-  Get,
-  UseGuards,
   Request,
-  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/sign-in.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { JwtRefreshAuthGuard } from './jwt-refresh-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -24,13 +22,10 @@ export class AuthController {
     return await this.authService.signIn(username, password);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('profile')
-  async getProfile(@Request() req) {
-    const user = req.user;
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-    return user;
+  @UseGuards(JwtRefreshAuthGuard)
+  @Post('refresh-tokens')
+  async refreshTokens(@Request() req) {
+    const refreshToken = req.headers.authorization.split(' ')[1]; // Extract refresh token from the Authorization header
+    return this.authService.refreshTokens(req.user.id, refreshToken);
   }
 }

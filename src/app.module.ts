@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { ProtectedController } from './protected.controller';
 
 @Module({
   imports: [
@@ -12,8 +14,12 @@ import { ConfigModule } from '@nestjs/config';
     }),
     AuthModule,
     UsersModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: '60s' },
+    }),
   ],
-  controllers: [AppController],
+  controllers: [AppController, ProtectedController],
   providers: [AppService],
 })
 export class AppModule {}
