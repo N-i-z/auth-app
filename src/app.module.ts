@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { ProtectedController } from './protected.controller';
+import { AdminController } from './admin/admin.controller';
 
 @Module({
   imports: [
@@ -16,10 +17,10 @@ import { ProtectedController } from './protected.controller';
     UsersModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '60s' },
+      signOptions: { expiresIn: '60s' }, // Adjust the expiry as needed
     }),
   ],
-  controllers: [AppController, ProtectedController],
+  controllers: [AppController, ProtectedController, AdminController],
   providers: [AppService],
 })
 export class AppModule {}

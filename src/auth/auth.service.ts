@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -23,9 +24,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid password');
     }
 
-    const payload = { username: user.username, sub: user.id };
+    const payload = { username: user.username, sub: user.id, role: user.role };
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = await this.generateRefreshToken(user.id);
+
     return { accessToken, refreshToken };
   }
 
@@ -38,7 +40,6 @@ export class AuthService {
       },
     );
 
-    // Store refresh token in DB (Token Rotation)
     await this.prisma.authRefreshToken.create({
       data: { refreshToken, userId },
     });
@@ -55,15 +56,14 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token invalid');
     }
 
-    // Delete the old refresh token from DB
     await this.prisma.authRefreshToken.delete({ where: { refreshToken } });
 
-    // Generate new access and refresh tokens without needing the password
     const user = await this.usersService.findOneById(userId);
 
     const newAccessToken = this.jwtService.sign({
       username: user.username,
       sub: user.id,
+      role: user.role, // Include role in new access token
     });
     const newRefreshToken = await this.generateRefreshToken(user.id);
 
@@ -71,5 +71,23 @@ export class AuthService {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
     };
+  }
+
+  async register(username: string, password: string, role?: Role) {
+    const existingUser = await this.usersService.findOne(username);
+    if (existingUser) {
+      throw new UnauthorizedException('Username already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await this.prisma.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+        role: role || Role.User,
+      },
+    });
+
+    return user;
   }
 }
