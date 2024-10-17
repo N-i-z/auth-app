@@ -39,6 +39,18 @@ export class UsersService {
     });
   }
 
+  async createUserWithOAuth(oauthProvider: string, oauthId: string) {
+    // Logic to create a new user based on OAuth provider and ID
+    return this.prisma.user.create({
+      data: {
+        username: `user_${oauthId}`,
+        oauthId,
+        oauthProvider,
+        role: Role.User,
+      },
+    });
+  }
+
   async findAll() {
     return this.prisma.user.findMany();
   }

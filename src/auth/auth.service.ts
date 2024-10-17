@@ -31,6 +31,26 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  async oauthLogin(oauthProvider: string, oauthId: string) {
+    let user = await this.prisma.user.findUnique({
+      where: { oauthId },
+    });
+
+    if (!user) {
+      // If user does not exist, create a new one
+      user = await this.usersService.createUserWithOAuth(
+        oauthProvider,
+        oauthId,
+      );
+    }
+
+    const payload = { username: user.username, sub: user.id, role: user.role };
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = await this.generateRefreshToken(user.id);
+
+    return { accessToken, refreshToken };
+  }
+
   async generateRefreshToken(userId: number) {
     const refreshToken = this.jwtService.sign(
       { sub: userId },
@@ -63,7 +83,7 @@ export class AuthService {
     const newAccessToken = this.jwtService.sign({
       username: user.username,
       sub: user.id,
-      role: user.role, // Include role in new access token
+      role: user.role,
     });
     const newRefreshToken = await this.generateRefreshToken(user.id);
 

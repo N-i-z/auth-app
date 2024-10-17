@@ -4,9 +4,9 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './jwt-strategy';
-import { JwtRefreshStrategy } from './jwt-refresh.strategy'; // Import the refresh strategy
+import { JwtRefreshStrategy } from './jwt-refresh.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { PrismaModule } from '../../prisma/prisma.module'; // Import PrismaModule
+import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
   imports: [
@@ -16,15 +16,13 @@ import { PrismaModule } from '../../prisma/prisma.module'; // Import PrismaModul
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '600s' }, // Access token expiration
+        signOptions: { expiresIn: '600s' },
       }),
-
       inject: [ConfigService],
     }),
-    PrismaModule, // Add PrismaModule here
+    PrismaModule,
   ],
-
-  providers: [AuthService, JwtStrategy, JwtRefreshStrategy], // Add refresh strategy here
+  providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
   controllers: [AuthController],
 })
 export class AuthModule {}
