@@ -31,17 +31,24 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async oauthLogin(oauthProvider: string, oauthId: string) {
+  async oauthLogin(
+    oauthProvider: string,
+    oauthId: string,
+    email: string,
+    username: string,
+  ) {
     let user = await this.prisma.user.findUnique({
-      where: { oauthId },
+      where: { oauthId }, // Use a unique identifier for OAuth
     });
 
     if (!user) {
-      // If user does not exist, create a new one
-      user = await this.usersService.createUserWithOAuth(
+      // If the user does not exist, create a new user
+      user = await this.usersService.createUserWithOAuth({
         oauthProvider,
         oauthId,
-      );
+        email,
+        username,
+      });
     }
 
     const payload = { username: user.username, sub: user.id, role: user.role };
@@ -60,6 +67,7 @@ export class AuthService {
       },
     );
 
+    // Store refresh token in the database
     await this.prisma.authRefreshToken.create({
       data: { refreshToken, userId },
     });
@@ -76,10 +84,10 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token invalid');
     }
 
+    // Remove the used refresh token and generate new ones
     await this.prisma.authRefreshToken.delete({ where: { refreshToken } });
 
     const user = await this.usersService.findOneById(userId);
-
     const newAccessToken = this.jwtService.sign({
       username: user.username,
       sub: user.id,

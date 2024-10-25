@@ -1,4 +1,8 @@
-import { Injectable, ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 
@@ -10,19 +14,30 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const token = request.headers.authorization?.split(' ')[1];
+    const authorizationHeader = request.headers.authorization;
 
-    if (token) {
-      try {
-        const payload = this.jwtService.verify(token);
-        console.log('Decoded JWT payload:', payload); // Add this to inspect the payload
-        request.user = payload; // Attach the decoded payload to the request
-      } catch (error) {
-        console.error('JWT verification failed', error); // Log any errors
-        return false; // Token verification failed
-      }
+    if (!authorizationHeader) {
+      throw new UnauthorizedException('Missing Authorization header');
     }
 
+    const token = authorizationHeader.split(' ')[1];
+    if (!token) {
+      throw new UnauthorizedException('Missing JWT token');
+    }
+
+    try {
+      // Verify the JWT token
+      const payload = this.jwtService.verify(token);
+      console.log('Decoded JWT payload:', payload); // Log payload for debugging
+
+      // Attach the decoded payload (user data) to the request object
+      request.user = payload;
+    } catch (error) {
+      console.error('JWT verification failed', error.message); // Log error details for debugging
+      throw new UnauthorizedException('Invalid token'); // Rethrow an Unauthorized exception
+    }
+
+    // Proceed with the normal AuthGuard behavior, allowing access if the token is valid
     return (await super.canActivate(context)) as boolean;
   }
 }

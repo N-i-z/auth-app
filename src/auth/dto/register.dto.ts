@@ -2,12 +2,12 @@ import { IsEnum, IsNotEmpty } from 'class-validator';
 import { Role } from '@prisma/client';
 
 export class RegisterDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Username is required' })
   username: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Password is required' })
   password: string;
 
-  @IsEnum(Role) // Ensure the role is one of the defined roles
-  role?: Role; // This can be optional or required based on your requirements
+  @IsEnum(Role)
+  role?: Role;
 }
