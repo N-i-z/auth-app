@@ -8,9 +8,27 @@ generator client {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int               @id @default(autoincrement())
+  username      String            @unique
+  password      String?           // Optional for OAuth users
+  role          Role              @default(User)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  refreshTokens AuthRefreshToken[]
+  oauthProvider  String?          
+  oauthId       String?          @unique
+}
+
+model AuthRefreshToken {
+  id           Int      @id @default(autoincrement())
+  refreshToken String   @unique
+  userId       Int
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  User
+  Admin
 }
