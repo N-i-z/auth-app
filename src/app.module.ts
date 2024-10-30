@@ -7,6 +7,9 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { ProtectedController } from './protected.controller';
 import { AdminController } from './admin/admin.controller';
+import { TenantsModule } from './tenants/tenants.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { PerformanceInterceptor } from './interceptor/performance.interceptor';
 
 @Module({
   imports: [
@@ -15,12 +18,19 @@ import { AdminController } from './admin/admin.controller';
     }),
     AuthModule,
     UsersModule,
+    TenantsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '60s' }, // Adjust the expiry as needed
+      signOptions: { expiresIn: '60s' },
     }),
   ],
   controllers: [AppController, ProtectedController, AdminController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: PerformanceInterceptor,
+    },
+  ],
 })
 export class AppModule {}

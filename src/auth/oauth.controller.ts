@@ -16,10 +16,14 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req, @Res() res) {
     const user = req.user; // Contains OAuth user information
-    const payload = { username: user.email, sub: user.id };
+    const payload = {
+      username: user.username,
+      sub: user.id,
+      tenantId: user.tenantId,
+    };
     const jwt = this.jwtService.sign(payload);
 
-    // You can attach the JWT to a cookie or return it in the response
+    // Attach the JWT to a cookie or return it in the response
     res.cookie('access_token', jwt, { httpOnly: true });
     return res.redirect('/');
   }
@@ -33,11 +37,12 @@ export class AuthController {
   @Get('github/callback')
   @UseGuards(AuthGuard('github'))
   async githubAuthRedirect(@Req() req, @Res() res) {
-    // Log the user data received from GitHub
-    console.log('GitHub OAuth User Data:', req.user); // Added logging for debugging
-
-    const user = req.user;
-    const payload = { username: user.emails[0]?.value, sub: user.id }; // Use email safely
+    const user = req.user; // Contains OAuth user information
+    const payload = {
+      username: user.username,
+      sub: user.id,
+      tenantId: user.tenantId,
+    };
     const jwt = this.jwtService.sign(payload);
 
     // Attach the JWT to a cookie or return it in the response

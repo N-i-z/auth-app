@@ -71,6 +71,7 @@ export class AuthController {
       user.id,
       user.emails[0]?.value,
       user.username,
+      user.tenantId,
     );
     return res.json({ accessToken, refreshToken });
   }
@@ -96,6 +97,7 @@ export class AuthController {
       user.id,
       user.emails[0]?.value,
       user.username,
+      user.tenantId,
     );
     return res.json({ accessToken, refreshToken });
   }

@@ -19,11 +19,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found');
     }
 
-    // Optionally, you can validate the role here if needed
+    // Validate the role from the payload
     if (payload.role !== user.role) {
       throw new UnauthorizedException('Role mismatch');
     }
 
-    return user; // You can return the entire user object or a simplified version as needed
+    return user; // Return the user object
   }
 }

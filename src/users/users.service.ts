@@ -1,68 +1,67 @@
-import {
-  Injectable,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { User, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { Role } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async findOne(username: string) {
+  // Update the findAll method to accept an optional tenantId
+  async findAll(tenantId?: number): Promise<User[]> {
+    const where = tenantId ? { tenantId } : {}; // If tenantId is provided, filter by it, otherwise fetch all
+    return this.prisma.user.findMany({
+      where: where,
+    });
+  }
+
+  async findOne(username: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { username } });
   }
 
-  async findOneById(userId: number) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return user;
+  async findOneById(userId: number): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { id: userId } });
   }
 
-  async createUser(username: string, password: string, role: Role) {
-    const existingUser = await this.findOne(username);
-    if (existingUser) {
-      throw new ConflictException('Username already exists');
-    }
-
+  async createUser(
+    username: string,
+    password: string,
+    role: Role,
+    tenantId: number,
+  ) {
     const hashedPassword = await bcrypt.hash(password, 10);
     return this.prisma.user.create({
       data: {
         username,
         password: hashedPassword,
         role,
+        tenant: { connect: { id: tenantId } },
       },
     });
   }
 
-  async createUserWithOAuth({
-    oauthProvider,
-    oauthId,
-    email,
-    username,
-  }: {
-    oauthProvider: string;
-    oauthId: string;
-    email: string;
-    username: string;
-  }) {
-    // Create a new user in the database with OAuth details
+  async createUserWithOAuth(userData: any) {
+    const { oauthId, email, username, tenantId } = userData;
     return this.prisma.user.create({
       data: {
-        oauthProvider,
         oauthId,
         email,
         username,
-        role: Role.User, // Assign a default role
+        tenant: { connect: { id: tenantId } },
       },
     });
   }
 
-  async findAll() {
-    return this.prisma.user.findMany();
+  async recreateUser(userData: any) {
+    const { oauthId, email, username, tenantId } = userData;
+    return this.prisma.user.update({
+      where: { oauthId },
+      data: {
+        email,
+        username,
+        tenant: { connect: { id: tenantId } },
+        isActive: true,
+      },
+    });
   }
 }

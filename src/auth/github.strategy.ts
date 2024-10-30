@@ -9,7 +9,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     super({
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: `http://localhost:3001/auth/github/callback`,
+      callbackURL: `http://localhost:3003/auth/github/callback`,
       scope: ['user:email'],
     });
   }
@@ -21,35 +21,33 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     done: VerifyCallback,
   ): Promise<any> {
     try {
-      // Extract necessary information from the GitHub profile
-      const { id, username, emails } = profile;
+      // Log the access token and profile for debugging
+      console.log('Access Token:', accessToken);
+      console.log('Profile:', profile);
 
-      // Ensure emails exist and use the first one as the primary email
+      const { id, username, emails } = profile;
       const email = emails && emails.length > 0 ? emails[0].value : null;
 
-      // Log profile data for debugging
-      console.log('GitHub Profile:', profile);
-      console.log('Extracted Email:', email);
-      console.log('Extracted Username:', username);
+      // Use the default tenant if none is provided
+      const tenantId = await this.authService.ensureDefaultTenant();
 
-      // Create or find a user in your database here
+      // Call oauthLogin to create or retrieve the user
       const user = await this.authService.oauthLogin(
         'github',
         id,
         email,
         username,
+        tenantId,
       );
 
       // If user is not found or created, handle it accordingly
       if (!user) {
-        return done(new Error('User not found'), null); // Or handle as you see fit
+        return done(new Error('User not found'), null);
       }
-
-      // Pass the user object to the next middleware
       done(null, user);
     } catch (error) {
-      console.error('Error during GitHub OAuth validation:', error); // Log the error for debugging
-      done(error, null); // Handle error during validation
+      console.error('Error during GitHub OAuth validation:', error); // Log the error
+      done(error, null);
     }
   }
 }

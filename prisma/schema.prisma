@@ -12,12 +12,16 @@ model User {
   username      String            @unique
   password      String?           // Optional for OAuth users
   role          Role              @default(User)
-  email         String?           @unique // Added email field
+  email         String?           @unique
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   refreshTokens AuthRefreshToken[]
   oauthProvider  String?          
   oauthId       String?          @unique
+  tenantId      Int                // Foreign key for tenant
+  tenant        Tenant           @relation(fields: [tenantId], references: [id]) // Relation to Tenant
+  isActive      Boolean          @default(true) 
+
 }
 
 model AuthRefreshToken {
@@ -27,6 +31,14 @@ model AuthRefreshToken {
   createdAt    DateTime @default(now())
 
   user         User     @relation(fields: [userId], references: [id])
+}
+
+model Tenant {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
